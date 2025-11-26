@@ -1,0 +1,168 @@
+import React, { useState, useEffect } from 'react';
+
+// Single-file React component for a simple token landing page
+// - TailwindCSS assumed available
+// - Uses window.solana (Phantom) for wallet connect (lightweight)
+// - Replace placeholders (TOKEN_NAME, SYMBOL, TOKEN_ADDRESS, TOTAL_SUPPLY, LAUNCH_DATE)
+
+export default function PizzaDayTokenSite() {
+  // ---------- CONFIG: ganti nilai di bawah sesuai token Anda ----------
+  const TOKEN_NAME = 'PizzaDay';
+  const SYMBOL = 'PIZZA';
+  const TOKEN_ADDRESS = 'ENTER_SOLANA_TOKEN_ADDRESS_HERE';
+  const TOTAL_SUPPLY = '1,000,000,000';
+  const LAUNCH_DATE = 'May 22, 2025';
+  // -------------------------------------------------------------------
+
+  const [walletAddress, setWalletAddress] = useState(null);
+  const [isPhantomInstalled, setIsPhantomInstalled] = useState(false);
+  const [donationAmount, setDonationAmount] = useState('0.001');
+
+  useEffect(() => {
+    if (window?.solana && window.solana.isPhantom) {
+      setIsPhantomInstalled(true);
+      window.solana.on('connect', () => setWalletAddress(window.solana.publicKey.toString()));
+      window.solana.on('disconnect', () => setWalletAddress(null));
+    }
+    return () => {
+      try { window?.solana?.removeAllListeners && window.solana.removeAllListeners('connect'); } catch(e){}
+    };
+  }, []);
+
+  const connectWallet = async () => {
+    try {
+      const resp = await window.solana.connect();
+      setWalletAddress(resp.publicKey.toString());
+    } catch (e) {
+      console.error('connect error', e);
+    }
+  };
+
+  const disconnectWallet = async () => {
+    try {
+      await window.solana.disconnect();
+      setWalletAddress(null);
+    } catch (e) {
+      console.error('disconnect error', e);
+    }
+  };
+
+  // Simple copy helper
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied: ' + text);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-yellow-50 via-orange-50 to-red-50 text-slate-800">
+      <header className="max-w-5xl mx-auto p-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-yellow-300 flex items-center justify-center text-2xl font-extrabold">🍕</div>
+          <div>
+            <h1 className="text-2xl font-extrabold">{TOKEN_NAME} <span className="text-sm opacity-70">({SYMBOL})</span></h1>
+            <p className="text-xs opacity-70">Meme token — merayakan Bitcoin Pizza Day</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {walletAddress ? (
+            <div className="flex items-center gap-3">
+              <div className="text-sm opacity-80">{walletAddress.slice(0,4)}...{walletAddress.slice(-4)}</div>
+              <button onClick={disconnectWallet} className="px-3 py-1 rounded-lg bg-slate-800 text-white text-sm">Disconnect</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {isPhantomInstalled ? (
+                <button onClick={connectWallet} className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold">Connect Phantom</button>
+              ) : (
+                <a href="https://phantom.app" target="_blank" rel="noreferrer" className="px-4 py-2 rounded-lg bg-slate-700 text-white">Install Phantom</a>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <section className="grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <h2 className="text-4xl font-extrabold mb-3">Selamat Pizza Day 🍕</h2>
+            <p className="mb-4 text-lg opacity-80">{TOKEN_NAME} adalah token meme di jaringan Solana. Didedikasikan untuk merayakan momen saat Bitcoin membeli pizza — selamat menikmati slice kripto!</p>
+            <div className="flex gap-3">
+              <button onClick={() => copyToClipboard(TOKEN_ADDRESS)} className="px-4 py-2 rounded-lg bg-white border">Copy Token Address</button>
+              <a href={`https://solscan.io/token/${TOKEN_ADDRESS}`} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-lg bg-yellow-400 font-semibold">View on Solscan</a>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <h3 className="font-bold mb-2">Token Snapshot</h3>
+            <ul className="text-sm opacity-85 space-y-2">
+              <li><strong>Address:</strong> <span className="ml-2">{TOKEN_ADDRESS}</span></li>
+              <li><strong>Symbol:</strong> <span className="ml-2">{SYMBOL}</span></li>
+              <li><strong>Total Supply:</strong> <span className="ml-2">{TOTAL_SUPPLY}</span></li>
+              <li><strong>Launch:</strong> <span className="ml-2">{LAUNCH_DATE}</span></li>
+            </ul>
+            <div className="mt-4">
+              <h4 className="text-sm font-semibold">Donate (SOL)</h4>
+              <div className="flex gap-2 mt-2">
+                <input type="text" value={donationAmount} onChange={(e) => setDonationAmount(e.target.value)} className="flex-1 p-2 border rounded" />
+                <button className="px-3 py-2 bg-slate-800 text-white rounded">Donate</button>
+              </div>
+              <p className="text-xs opacity-60 mt-2">Note: tombol Donate tidak melakukan transaksi otomatis — hubungkan backend atau integrasi wallet adapter untuk mengirim transaksi.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12 grid md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-2xl p-6 shadow">
+            <h4 className="font-bold mb-2">Tokenomics</h4>
+            <ol className="text-sm list-decimal list-inside opacity-90">
+              <li>Community: 60% — Airdrop / Giveaways</li>
+              <li>Liquidity: 25% — Pools</li>
+              <li>Team: 5% — Vesting</li>
+              <li>Burn/Reserve: 10% — Special slice</li>
+            </ol>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow">
+            <h4 className="font-bold mb-2">Roadmap</h4>
+            <ul className="text-sm opacity-90 space-y-2">
+              <li><strong>Phase 1:</strong> Launch token & landing page</li>
+              <li><strong>Phase 2:</strong> Airdrop untuk pizza lovers</li>
+              <li><strong>Phase 3:</strong> Meme contest & NFT slices</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow text-center">
+            <h4 className="font-bold mb-2">Meme Gallery</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <img src="https://images.unsplash.com/photo-1542282811-943ef1a977c9?w=800&q=60" alt="pizza" className="rounded" />
+              <img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=60" alt="pizza close" className="rounded" />
+              <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&q=60" alt="meme1" className="rounded" />
+              <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=60" alt="meme2" className="rounded" />
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12 bg-white rounded-2xl p-6 shadow">
+          <h3 className="font-bold mb-3">FAQ singkat</h3>
+          <div className="space-y-3 text-sm opacity-90">
+            <div>
+              <strong>Apakah ini token resmi Bitcoin?</strong>
+              <div>Tidak — ini adalah token meme yang dibuat di jaringan Solana untuk merayakan Pizza Day Bitcoin.</div>
+            </div>
+            <div>
+              <strong>Bagaimana cara membeli?</strong>
+              <div>Gunakan Solana DEX yang mendukung token custom, atau buka link Solscan untuk melihat liquidity pools. Pastikan verifikasi alamat token sebelum membeli.</div>
+            </div>
+          </div>
+        </section>
+
+        <footer className="mt-12 py-8 text-center text-sm opacity-80">
+          <div className="max-w-2xl mx-auto">
+            <p>© {new Date().getFullYear()} {TOKEN_NAME}. Ini hanya untuk tujuan hiburan — bukan saran keuangan.</p>
+            <p className="mt-2">Follow kami: <span className="font-semibold">@PizzaDayToken</span></p>
+          </div>
+        </footer>
+      </main>
+    </div>
+  );
+}
